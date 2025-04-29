@@ -56,7 +56,11 @@ jobs:
           path: src/MauiDotnetPublishBug.App/bin/Release/net9.0-android/*Signed.a*
 
   build-ios:
-    runs-on: macos-15-large # Same as MS-hosted macos-15 runner image on Azure Pipelines.
+    # macos-15-large would technically be the equivalent to a MS-hosted macos-15
+    # runner image on Azure Pipelines, but that isn't available as standard for
+    # non-enterprise plans. I'll see what I can do with the arm64 macOS images
+    # instead...
+    runs-on: macos-15
     name: iOS Build
     steps:
 
