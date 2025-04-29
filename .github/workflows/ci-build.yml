@@ -82,7 +82,7 @@ jobs:
         run: dotnet build src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj -c Release -f net9.0-ios --no-restore /p:buildForSimulator=True /p:packageApp=True /p:ArchiveOnBuild=False
 
       - name: Upload iOS Artifact
-        uses: actions/upload-artifact@4
+        uses: actions/upload-artifact@v4
         with:
           name: mauidotnetpublishbug-ios-ci-build
           path: src/MauiDotnetPublishBug.App/bin/Release/net9.0-ios/iossimulator-x64/**/*.app
