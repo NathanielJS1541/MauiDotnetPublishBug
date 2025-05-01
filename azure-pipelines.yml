@@ -62,6 +62,101 @@ stages:
       steps:
 
       - task: PowerShell@2
+        displayName: 'Get App Version'
+        name: SetVersion
+        inputs:
+          targetType: 'inline'
+          script: |
+
+            Write-Host ""
+            Write-Host "Opening MauiDotnetPublishBug.App.csproj..."
+            $string = Get-Content -Path .\src\MauiDotnetPublishBug.App\MauiDotnetPublishBug.App.csproj
+            Write-Host "Querying MauiDotnetPublishBug.App.csproj for version..."
+            $match = Select-String "<ApplicationDisplayVersion>(\d+)\.(\d+)\.(\d+)" -inputobject $string
+
+            Write-Host "Found the following version:"
+            $projectVersionMajor = $match.Matches.groups[1].value
+            $projectVersionMinor = $match.Matches.groups[2].value
+            $projectVersionBuild = $match.Matches.groups[3].value
+            Write-Host "- Major Version:    $projectVersionMajor"
+            Write-Host "- Minor Version:    $projectVersionMinor"
+            Write-Host "- Build Version:    $projectVersionBuild"
+
+            Write-Host ""
+            Write-Host "Finalising version..."
+            $version = $projectVersionMajor + "." + $projectVersionMinor + "." + $projectVersionBuild
+            Write-Host "- Version is: $version"
+            Write-Host ""
+            Write-Host "Saving to pipeline variable..."
+            Write-Host "##vso[task.setvariable variable=versionNumber;isOutput=true;]$version"
+
+          failOnStderr: true
+          showWarnings: true
+
+      - task: PowerShell@2
+        displayName: 'Get Target Frameworks'
+        name: GetTargetFrameworks
+        inputs:
+          targetType: 'inline'
+          script: |
+
+            # Load the System.Xml.Linq assembly to parse the .csproj file.
+            Add-Type -AssemblyName "System.Xml.Linq"
+
+            # Resolve the absolute path to the app .csproj file.
+            $path = (Resolve-Path ".\src\MauiDotnetPublishBug.App\MauiDotnetPublishBug.App.csproj").Path
+
+            # Load the .csproj file as an XDocument.
+            $doc = [System.Xml.Linq.XDocument]::Load($path)
+
+            # Get the target frameworks from the .csproj file.
+            $targetFrameworks = $doc.
+                Element("Project").
+                Element("PropertyGroup").
+                Element("TargetFrameworks").
+                Value
+
+            # Try and get the Android and iOS frameworks from the target
+            # frameworks in the .csproj file.
+            if ($targetFrameworks -match "(?<framework>net\d\.\d-android)") {
+                $androidFramework = $Matches["framework"]
+            }
+            else {
+                # Output an error message displaying the available target
+                # frameworks if a matching framework was not found.
+
+                # Convert the list of target frameworks to a bullet point list.
+                $frameworksList = ($targetFrameworks -split ";" | ForEach-Object { "• $_" }) -join "`n"
+
+                # Output an error and display all target frameworks.
+                Write-Error -Message "Unable to identify Android target framework:`n$frameworksList"
+            }
+            if ($targetFrameworks -match "(?<framework>net\d\.\d-ios)") {
+                $iosFramework = $Matches["framework"]
+            }
+            else {
+                # Output an error message displaying the available target
+                # frameworks if a matching framework was not found.
+
+                # Convert the list of target frameworks to a bullet point list.
+                $frameworksList = ($targetFrameworks -split ";" | ForEach-Object { "• $_" }) -join "`n"
+
+                # Output an error and display all target frameworks.
+                Write-Error -Message "Unable to identify iOS target framework:`n$frameworksList"
+            }
+
+            # If the target frameworks were successfully identified, write them
+            # to variables to be used in the build step.
+            if (-not [string]::IsNullOrEmpty($androidFramework) -and -not [string]::IsNullOrEmpty($androidFramework)) {
+              Write-Host ""
+              Write-Host "Saving target frameworks to pipeline variable..."
+              Write-Host "##vso[task.setvariable variable=androidFramework;isOutput=true;]$androidFramework"
+              Write-Host "##vso[task.setvariable variable=iosFramework;isOutput=true;]$iosFramework"
+            }
+          failOnStderr: true
+          showWarnings: true
+
+      - task: PowerShell@2
         displayName: 'Display Pipeline Configuration'
         name: DisplayConfig
         inputs:
@@ -76,13 +171,17 @@ stages:
             Write-Host ""
             Write-Host "Pipeline Build Configuration:"
             Write-Host "Selected .NET Version: $(dotNetVersion)"
+            Write-Host "Android TargetFramework: $(GetTargetFrameworks.androidFramework)"
+            Write-Host "iOS TargetFramework: $(GetTargetFrameworks.iosFramework)"
             Write-Host "Solution Build Configuration: $(buildConfiguration)"
             Write-Host "Max. Concurrent Build Processes: $(maxProcesses)"
             Write-Host "Max. Processes Option: $(maxProcessOption)"
             Write-Host ""
-            Write-Host "Secure File Configuration:"
+            Write-Host "App Configuration:"
+            Write-Host "App Version: $(SetVersion.versionNumber)"
             Write-Host "Android Keystore File: $(keystoreFile)"
             Write-Host "iOS Provisioning Profile: $(provisioningProfile)"
+            Write-Host "iOS .p12 Certificate: $(appleCertificate)"
           failOnStderr: true
           showWarnings: true
 
@@ -97,6 +196,9 @@ stages:
 
   - job: Build_Android
     displayName: Build for Android
+
+    variables:
+      targetFramework: $[ stageDependencies.Prep.Prep.outputs['GetTargetFrameworks.androidFramework'] ]
 
     steps:
 
@@ -169,7 +271,7 @@ stages:
         command: publish
         publishWebProjects: false
         projects: $(Build.SourcesDirectory)/src/MauiDotnetPublishBug.sln
-        arguments: $(maxProcessOption) -f net9.0-android -c $(buildConfiguration) -p:AndroidPackageFormat=aab -p:AndroidKeyStore=True -p:AndroidSigningKeyStore=$(DownloadKeyStore.secureFilePath) -p:AndroidSigningStorePass=$(android-keystore-password) -p:AndroidSigningKeyAlias=$(android-key-alias) -p:AndroidSigningKeyPass=$(android-keystore-password) -bl:android-log.binlog
+        arguments: $(maxProcessOption) -f $(targetFramework) -c $(buildConfiguration) -p:AndroidPackageFormat=aab -p:AndroidKeyStore=True -p:AndroidSigningKeyStore=$(DownloadKeyStore.secureFilePath) -p:AndroidSigningStorePass=$(android-keystore-password) -p:AndroidSigningKeyAlias=$(android-key-alias) -p:AndroidSigningKeyPass=$(android-keystore-password) -bl:android-log.binlog
         zipAfterPublish: false
         modifyOutputPath: false
 
@@ -203,6 +305,9 @@ stages:
   - job: Build_iOS
     displayName: Build for iOS
 
+    variables:
+      targetFramework: $[ stageDependencies.Prep.Prep.outputs['GetTargetFrameworks.iosFramework'] ]
+
     steps:
 
     - task: UseDotNet@2
@@ -225,7 +330,6 @@ stages:
 
           # Load the .csproj file as an XDocument.
           $doc = [System.Xml.Linq.XDocument]::Load($path)
-
 
           # Update the ApplicationVersion element to the current build number.
           $doc.
@@ -357,7 +461,7 @@ stages:
     - task: CmdLine@2
       displayName: 'Set Xcode Version'
       inputs:
-        script: echo '##vso[task.setvariable variable=MD_APPLE_SDK_ROOT;]'$(xcodePath);sudo xcode-select --switch $(xcodePath)/Contents/Developer
+        script: Write-Host '##vso[task.setvariable variable=MD_APPLE_SDK_ROOT;]'$(xcodePath);sudo xcode-select --switch $(xcodePath)/Contents/Developer
 
     - task: DotNetCoreCLI@2
       displayName: Build Project
@@ -365,7 +469,7 @@ stages:
         command: publish
         publishWebProjects: false
         projects: $(Build.SourcesDirectory)/src/MauiDotnetPublishBug.sln
-        arguments: $(maxProcessOption) -f net9.0-ios -c $(buildConfiguration) -p:ArchiveOnBuild=true -p:CodesignKey="$(APPLE_CERTIFICATE_SIGNING_IDENTITY)" -p:CodesignProvision="$(APPLE_PROV_PROFILE_UUID)" -bl:ios-log.binlog
+        arguments: $(maxProcessOption) -f $(targetFramework) -c $(buildConfiguration) -p:ArchiveOnBuild=true -p:CodesignKey="$(APPLE_CERTIFICATE_SIGNING_IDENTITY)" -p:CodesignProvision="$(APPLE_PROV_PROFILE_UUID)" -bl:ios-log.binlog
         zipAfterPublish: false
         modifyOutputPath: false
 
