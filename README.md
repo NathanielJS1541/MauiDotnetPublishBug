@@ -1,15 +1,34 @@
 # MauiDotnetPublishBug
 
-A simple app with a GitHub action to reproduce dotnet/maui#29004.
+A simple app with a GitHub action / Azure pipeline to reproduce
+dotnet/maui#29004.
 
-The Action doesn't deploy the build artifacts anywhere, or do anything fancy for
-that matter, since the bug being reproduced occurs during the `dotnet publish`
-step in the action. Any other contents in the action would just add noise.
+The Action and pipeline don't deploy the build artifacts anywhere, or do
+anything fancy for that matter, since the bug being reproduced occurs during the
+`dotnet publish` / `dotnet build` step in the action. Any other contents in the
+action would just add noise.
 
 Because I needed to add multiple projects to reproduce the bug, I've had to add
 some (slightly ridiculous) classes and usage examples to each project. The uses
 of the projects and general codebase structure is
 [explained in more detail below](#codebase-structure).
+
+<!-- omit from toc -->
+## Contents
+
+- [Bug Details](#bug-details)
+- [Workaround](#workaround)
+- [Codebase Structure](#codebase-structure)
+  - [MauiDotnetPublishBug.App](#mauidotnetpublishbugapp)
+  - [MauiDotnetPublishBug.Common](#mauidotnetpublishbugcommon)
+  - [MauiDotnetPublishBug.Controls](#mauidotnetpublishbugcontrols)
+  - [MauiDotnetPublishBug.Core](#mauidotnetpublishbugcore)
+  - [MauiDotnetPublishBug.Resources](#mauidotnetpublishbugresources)
+- [Azure Pipeline File](#azure-pipeline-file)
+  - [Pipeline Variables](#pipeline-variables)
+  - [Secure Files](#secure-files)
+- [Binlogs](#binlogs)
+- [Licenses and Attributions](#licenses-and-attributions)
 
 ## Bug Details
 
