@@ -1,0 +1,310 @@
+name: $(Date:yyMMdd)$(Rev:rr)
+
+# Define the behaviour of the pipeline when changes are pushed to a branch.
+trigger:
+  # Changes should be batched for each branch to prevent excessive pipeline
+  # runs.
+  batch: true
+  # The pipeline should be triggered when changes are pushed to the main branch.
+  branches:
+    include:
+    - dev
+    - main
+  # Run the pipeline when there are changes to the pipeline or code changes in
+  # the src directory.
+  paths:
+    include:
+    - azure-pipelines.yml
+    - src
+
+variables:
+  # The build configuration to pass to "dotnet publish".
+  buildConfiguration: 'Release'
+  # Define the runner configuration.
+  dotNetVersion: '9.x'
+  macOsVersion: 'macOS-15'
+  xcodeVersion: '16.3'
+  # Define secure file names.
+  keystoreFile: 'MyApp.keystore' # Android keystore file name in secure files.
+  provisioningProfile: 'MyApp.mobileprovision' # Provisioning profile name in secure files.
+  appleCertificate: 'MyApp.p12' # Apple signing certificate name in secure files.
+  # Get the maximum number of concurrent process that the build should use.
+  #
+  # This may not always be needed, but seems to be required for something with
+  # the following configuration:
+  # - Runner image: macOS 15 20250408.1132
+  # - Xcode 16.3
+  # - .NET Runtime 9.0.4
+  # - .NET SDK 9.0.203
+  # - .NET MAUI 9.0.60
+  #
+  # Without setting this, dotnet publish fails under these circumstances.
+  maxProcesses: '' # dotnet publish fails unless this is limited to 1.
+  # Convert the number provided by the build configuration into the option that
+  # can be passed to dotnet pack. This will be empty if a number is not
+  # specified. The option to specify the maximum number of concurrent processes
+  # for dotnet pack is -m:N, where N is the number of processes.
+  maxProcessOption: $[iif(eq(variables['maxProcesses'], ''), '', format('-m:{0}', variables['maxProcesses']))]
+
+stages:
+
+- stage: Prep
+  displayName: Prep
+
+  pool:
+    vmImage: windows-latest
+
+  jobs:
+
+    - job: Prep
+      displayName: Initialise Pipeline Configuration
+
+      steps:
+
+      - task: PowerShell@2
+        displayName: 'Display Pipeline Configuration'
+        name: DisplayConfig
+        inputs:
+          targetType: 'inline'
+          script: |
+            Write-Host ""
+            Write-Host "Current Pipeline Configuration:"
+            Write-Host ""
+            Write-Host "Runner Image Configuration:"
+            Write-Host "macOS Version: $(macOsVersion)"
+            Write-Host "Xcode Version: $(xcodeVersion)"
+            Write-Host ""
+            Write-Host "Pipeline Build Configuration:"
+            Write-Host "Selected .NET Version: $(dotNetVersion)"
+            Write-Host "Solution Build Configuration: $(buildConfiguration)"
+            Write-Host "Max. Concurrent Build Processes: $(maxProcesses)"
+            Write-Host "Max. Processes Option: $(maxProcessOption)"
+            Write-Host ""
+            Write-Host "Secure File Configuration:"
+            Write-Host "Android Keystore File: $(keystoreFile)"
+            Write-Host "iOS Provisioning Profile: $(provisioningProfile)"
+          failOnStderr: true
+          showWarnings: true
+
+- stage: Build
+  displayName: Build
+  dependsOn: Prep
+
+  pool:
+    vmImage: $(macOsVersion)
+
+  jobs:
+
+  - job: Build_Android
+    displayName: Build for Android
+
+    steps:
+
+    - task: UseDotNet@2
+      displayName: Set .NET Version
+      inputs:
+        packageType: sdk
+        version: $(dotNetVersion)
+
+    - task: Bash@3
+      displayName: Install MAUI workloads
+      inputs:
+        targetType: inline
+        script: |
+          dotnet nuget locals all --clear
+          dotnet workload install maui android --source https://api.nuget.org/v3/index.json
+
+    - task: NuGetAuthenticate@1
+      displayName: Authenticate to NuGet
+
+    - task: DotNetCoreCLI@2
+      displayName: Restore NuGet Packages
+      inputs:
+        command: restore
+        projects: $(Build.SourcesDirectory)/src/MauiDotnetPublishBug.sln
+        feedsToUse: config
+        nugetConfigPath: $(Build.SourcesDirectory)/src/nuget.config
+
+    - task: DownloadSecureFile@1
+      name: DownloadKeyStore
+      displayName: "Copy Keystore File"
+      inputs:
+        secureFile: $(keystoreFile)
+
+    - task: DotNetCoreCLI@2
+      displayName: Build Project
+      inputs:
+        command: publish
+        publishWebProjects: false
+        projects: $(Build.SourcesDirectory)/src/MauiDotnetPublishBug.sln
+        arguments: $(maxProcessOption) -f net9.0-android -c $(buildConfiguration) -p:AndroidPackageFormat=aab -p:AndroidKeyStore=True -p:AndroidSigningKeyStore=$(DownloadKeyStore.secureFilePath) -p:AndroidSigningStorePass=$(android-keystore-password) -p:AndroidSigningKeyAlias=$(android-key-alias) -p:AndroidSigningKeyPass=$(android-keystore-password)
+        zipAfterPublish: false
+        modifyOutputPath: false
+
+    - task: CopyFiles@2
+      displayName: Copy Build Output
+      inputs:
+        Contents: |
+          **/*.aab
+          **/*.apk
+        TargetFolder: $(Build.ArtifactStagingDirectory)
+        flattenFolders: true
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Artifacts
+      inputs:
+        PathtoPublish: $(Build.ArtifactStagingDirectory)
+        ArtifactName: Android
+        publishLocation: Container
+
+  - job: Build_iOS
+    displayName: Build for iOS
+
+    steps:
+
+    - task: UseDotNet@2
+      displayName: Set .NET Version
+      inputs:
+        packageType: sdk
+        version: $(dotNetVersion)
+
+    - task: Bash@3
+      displayName: Install MAUI workloads
+      inputs:
+        targetType: inline
+        script: |
+          dotnet nuget locals all --clear
+          dotnet workload install maui ios --source https://api.nuget.org/v3/index.json
+
+    - task: NuGetAuthenticate@1
+      displayName: Authenticate to NuGet
+
+    - task: DotNetCoreCLI@2
+      displayName: Restore NuGet Packages
+      inputs:
+        command: restore
+        projects: $(Build.SourcesDirectory)/src/MauiDotnetPublishBug.sln
+        feedsToUse: config
+        nugetConfigPath: $(Build.SourcesDirectory)/src/nuget.config
+
+    - task: InstallAppleCertificate@2
+      displayName: Install Publishing Certificate
+      inputs:
+        certSecureFile: $(appleCertificate)
+        certPwd: $(ios-p12-password)
+        keychain: temp
+
+    - task: InstallAppleProvisioningProfile@1
+      displayName: Install Provisioning Profile
+      inputs:
+        provisioningProfileLocation: secureFiles
+        provProfileSecureFile: $(provisioningProfile)
+
+    - task: PowerShell@2
+      displayName: 'Get Xcode Path'
+      name: GetXcodePath
+      inputs:
+        targetType: 'inline'
+        script: |
+
+          Write-Host ""
+          Write-Host "Getting path to Xcode $(xcodeVersion)"
+
+          # Get a list of every Xcode version installed.
+          $xcodeVersions = Get-ChildItem -Path "/Applications/" -Filter "Xcode*.app"
+
+          # Update $xcodeVersions to only include symbolic links.
+          #
+          # xcode-select seems to have issues when selecting symbolic links, so
+          # filter them out of the available Xcode versions.
+          $xcodeVersions = $xcodeVersions | Where-Object { -not ($_.Attributes -band [System.IO.FileAttributes]::ReparsePoint) }
+
+          # Get a list of versions that match by name.
+          $matchingVersions = $xcodeVersions | Where-Object { $_.Name -match "Xcode_$(xcodeVersion)" }
+
+          # If empty and the version number is X.0, try removing the 0.
+          #
+          # This is needed, as previously there have been issues where
+          # releases with a minor version of 0 are stored only under the
+          # major version number. For example, Xcode 16.0 is stored under
+          # /Applications/Xcode_16.app rather than
+          # /Applications/Xcode_16.0.app.
+          if ($matchingVersions.Count -eq 0 -and "$(xcodeVersion)" -match "\.0$") {
+              # Remove the .0 minor version from the version string.
+              $majorVersion = "$(xcodeVersion)" -replace "\.0$", ""
+
+              # Look for Xcode versions matching only the major version.
+              # Update the $matchingVersions list accordingly.
+              $matchingVersions = $xcodeVersions | Where-Object { $_.Name -match "Xcode_$($majorVersion).app" }
+          }
+
+          # If more than one Xcode version has matched the version string,
+          # then throw an error. This is needed to ensure that the selected
+          # version is always an exact match to one Xcode install.
+          if ($matchingVersions.Count -gt 1) {
+              # Convert the list of matching Xcode paths to a bullet point list.
+              $matchingVersionList = ($matchingVersions | Select-Object -ExpandProperty FullName | ForEach-Object { "• $_" }) -join "`n"
+
+              # Output an error and display all matching Xcode versions.
+              Write-Error -Message "Found multiple Xcode versions matching $(xcodeVersion):`n$matchingVersionList"
+          }
+
+          # Get full path. At this point the $matchingVersions will either
+          # contain one item or no items. Therefore $selectedXcode will
+          # either be a string representation of the Xcode path, or an empty
+          # string.
+          $selectedXcode = $matchingVersions | Select-Object -ExpandProperty FullName
+
+          # Check if a matching Xcode version has been found.
+          if (-not [string]::IsNullOrEmpty($selectedXcode)) {
+              # Save the Xcode path to a variable so it can be referenced
+              # later in the pipeline.
+              Write-Host "Selecting the following Xcode version: $selectedXcode"
+              Write-Host ""
+              Write-Host "Saving to pipeline variable..."
+              Write-Host "##vso[task.setvariable variable=xcodePath;isReadOnly=true]$selectedXcode"
+          } else {
+              # A matching Xcode version could not be found. Throw an error
+              # and display a list of available Xcode versions.
+
+              # Convert the list of all Xcode paths to a bullet point list.
+              $xcodePathList = ($xcodeVersions | Select-Object -ExpandProperty FullName | ForEach-Object { "• $_" }) -join "`n"
+
+              # Output an error and display all available Xcode versions.
+              Write-Error "Could not find an Xcode version matching $(xcodeVersion). The following versions were found:`n$xcodePathList"
+          }
+        failOnStderr: true
+        showWarnings: true
+
+      # Solution for setting Xcode version taken from StackOverflow
+      # https://stackoverflow.com/a/74828482/2678851
+    - task: CmdLine@2
+      displayName: 'Set Xcode Version'
+      inputs:
+        script: echo '##vso[task.setvariable variable=MD_APPLE_SDK_ROOT;]'$(xcodePath);sudo xcode-select --switch $(xcodePath)/Contents/Developer
+
+    - task: DotNetCoreCLI@2
+      displayName: Build Project
+      inputs:
+        command: publish
+        publishWebProjects: false
+        projects: $(Build.SourcesDirectory)/src/MauiDotnetPublishBug.sln
+        arguments: $(maxProcessOption) -f net9.0-ios -c $(buildConfiguration) -p:ArchiveOnBuild=true -p:CodesignKey="$(APPLE_CERTIFICATE_SIGNING_IDENTITY)" -p:CodesignProvision="$(APPLE_PROV_PROFILE_UUID)
+        zipAfterPublish: false
+        modifyOutputPath: false
+
+    - task: CopyFiles@2
+      displayName: Copy Build Output
+      inputs:
+        Contents: |
+          **/*.app
+          **/*.ipa
+        TargetFolder: $(Build.ArtifactStagingDirectory)
+        flattenFolders: true
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Artifacts
+      inputs:
+        PathtoPublish: $(Build.ArtifactStagingDirectory)
+        ArtifactName: iOS
+        publishLocation: Container

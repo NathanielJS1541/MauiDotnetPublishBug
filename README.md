@@ -148,6 +148,44 @@ themes, etc. that are not specific to a particular framework or app shell. This
 would allow us to have consistency between different app implementations, and
 share resources like translated strings between multiple projects.
 
+## Azure Pipeline File
+
+I've included [azure-pipelines.yml](./azure-pipelines.yml), which is a
+(massively) trimmed down version of our pipeline configuration. This should
+allow you to reproduce the bug using an azure pipeline. However, you will need
+to update a couple of things first.
+
+### Pipeline Variables
+
+You will need to define the following pipeline variables:
+- `android-key-alias`: The alias name of the key within your keystore file that
+  will be used to sign the app.
+- `android-keystore-password`: The password to your keystore file. This should
+  be configured as a secret.
+- `ios-p12-password`: The password to your `.p12` certificate. This should be
+  configured as a secret.
+
+**The names of these variables must match exactly.**
+
+### Secure Files
+
+You will also need to upload the following files to the secure files library:
+- `MyApp.keystore`: The Android keystore file used to sign the Android app.
+- `MyApp.mobileprovision`: The iOS provisioning profile for the app.
+- `MyApp.p12`: The iOS signing certificate to sign the app with.
+
+**These can be renamed, but you should ensure to also update the following names
+configured in the pipeline:**
+
+```yml
+variables:
+  ...
+  # Define secure file names.
+  keystoreFile: 'MyApp.keystore' # Android keystore file name in secure files.
+  provisioningProfile: 'MyApp.mobileprovision' # Provisioning profile name in secure files.
+  appleCertificate: 'MyApp.p12' # Apple signing certificate name in secure files.
+```
+
 ## Licenses and Attributions
 
 This project uses icons from the
