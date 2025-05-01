@@ -41,6 +41,35 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: UpdateProjectInfo
+        shell: pwsh
+        run: |
+          # Load the System.Xml.Linq assembly to parse the .csproj file.
+          Add-Type -AssemblyName "System.Xml.Linq"
+
+          # Resolve the absolute path to the app .csproj file.
+          $path = (Resolve-Path ".\src\MauiDotnetPublishBug.App\MauiDotnetPublishBug.App.csproj").Path
+
+          # Load the .csproj file as an XDocument.
+          $doc = [System.Xml.Linq.XDocument]::Load($path)
+
+          # Update the ApplicationVersion element to the current build number.
+          $doc.
+              Element("Project").
+              Element("PropertyGroup").
+              Element("ApplicationVersion").
+              SetValue("${{ github.run_attempt }}")
+
+          # Create some XmlWriterSettings to prevent trashing the format of the .csproj file.
+          $settings = New-Object System.Xml.XmlWriterSettings
+          $settings.OmitXmlDeclaration = $true
+          $settings.Indent = $true
+
+          # Save the .csproj with the updated build number.
+          $writer = [System.Xml.XmlWriter]::Create($path, $settings)
+          $doc.Save($writer)
+          $writer.Close()
+
       - name: Install MAUI Workload
         run: dotnet workload install maui --ignore-failed-sources
 
@@ -95,6 +124,35 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: UpdateProjectInfo
+        shell: pwsh
+        run: |
+          # Load the System.Xml.Linq assembly to parse the .csproj file.
+          Add-Type -AssemblyName "System.Xml.Linq"
+
+          # Resolve the absolute path to the app .csproj file.
+          $path = (Resolve-Path ".\src\MauiDotnetPublishBug.App\MauiDotnetPublishBug.App.csproj").Path
+
+          # Load the .csproj file as an XDocument.
+          $doc = [System.Xml.Linq.XDocument]::Load($path)
+
+          # Update the ApplicationVersion element to the current build number.
+          $doc.
+              Element("Project").
+              Element("PropertyGroup").
+              Element("ApplicationVersion").
+              SetValue("${{ github.run_attempt }}")
+
+          # Create some XmlWriterSettings to prevent trashing the format of the .csproj file.
+          $settings = New-Object System.Xml.XmlWriterSettings
+          $settings.OmitXmlDeclaration = $true
+          $settings.Indent = $true
+
+          # Save the .csproj with the updated build number.
+          $writer = [System.Xml.XmlWriter]::Create($path, $settings)
+          $doc.Save($writer)
+          $writer.Close()
 
       - name: Install MAUI Workload
         run: dotnet workload install maui --ignore-failed-sources
