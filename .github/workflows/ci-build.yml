@@ -84,6 +84,10 @@ jobs:
       - name: Restore Dependencies
         run: dotnet restore src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj
 
+      # In our actual pipeline, we use dotnet publish. However, that requires a
+      # provisioning profile and signing certificate which I don't have for this
+      # repo. Instead, I've tried to use dotnet build to see if it exhibits the
+      # same behaviour.
       - name: Build MAUI iOS
         run: dotnet build src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj -c Release -f net9.0-ios --no-restore /p:buildForSimulator=True /p:packageApp=True /p:ArchiveOnBuild=False
 
