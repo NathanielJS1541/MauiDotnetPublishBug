@@ -137,7 +137,7 @@ stages:
         command: publish
         publishWebProjects: false
         projects: $(Build.SourcesDirectory)/src/MauiDotnetPublishBug.sln
-        arguments: $(maxProcessOption) -f net9.0-android -c $(buildConfiguration) -p:AndroidPackageFormat=aab -p:AndroidKeyStore=True -p:AndroidSigningKeyStore=$(DownloadKeyStore.secureFilePath) -p:AndroidSigningStorePass=$(android-keystore-password) -p:AndroidSigningKeyAlias=$(android-key-alias) -p:AndroidSigningKeyPass=$(android-keystore-password)
+        arguments: $(maxProcessOption) -f net9.0-android -c $(buildConfiguration) -p:AndroidPackageFormat=aab -p:AndroidKeyStore=True -p:AndroidSigningKeyStore=$(DownloadKeyStore.secureFilePath) -p:AndroidSigningStorePass=$(android-keystore-password) -p:AndroidSigningKeyAlias=$(android-key-alias) -p:AndroidSigningKeyPass=$(android-keystore-password) -bl:android-log.binlog
         zipAfterPublish: false
         modifyOutputPath: false
 
@@ -150,7 +150,18 @@ stages:
         TargetFolder: $(Build.ArtifactStagingDirectory)
         flattenFolders: true
 
+    # Always try and upload .binlog files.
+    - task: CopyFiles@2
+      condition: always()
+      displayName: Upload Binlogs
+      inputs:
+        Contents: |
+          **/*.binlog
+        TargetFolder: $(Build.ArtifactStagingDirectory)
+        flattenFolders: true
+
     - task: PublishBuildArtifacts@1
+      condition: always()
       displayName: Publish Artifacts
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)
@@ -289,7 +300,7 @@ stages:
         command: publish
         publishWebProjects: false
         projects: $(Build.SourcesDirectory)/src/MauiDotnetPublishBug.sln
-        arguments: $(maxProcessOption) -f net9.0-ios -c $(buildConfiguration) -p:ArchiveOnBuild=true -p:CodesignKey="$(APPLE_CERTIFICATE_SIGNING_IDENTITY)" -p:CodesignProvision="$(APPLE_PROV_PROFILE_UUID)
+        arguments: $(maxProcessOption) -f net9.0-ios -c $(buildConfiguration) -p:ArchiveOnBuild=true -p:CodesignKey="$(APPLE_CERTIFICATE_SIGNING_IDENTITY)" -p:CodesignProvision="$(APPLE_PROV_PROFILE_UUID)" -bl:ios-log.binlog
         zipAfterPublish: false
         modifyOutputPath: false
 
@@ -302,7 +313,18 @@ stages:
         TargetFolder: $(Build.ArtifactStagingDirectory)
         flattenFolders: true
 
+    # Always try and upload .binlog files.
+    - task: CopyFiles@2
+      condition: always()
+      displayName: Upload Binlogs
+      inputs:
+        Contents: |
+          **/*.binlog
+        TargetFolder: $(Build.ArtifactStagingDirectory)
+        flattenFolders: true
+
     - task: PublishBuildArtifacts@1
+      condition: always()
       displayName: Publish Artifacts
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)

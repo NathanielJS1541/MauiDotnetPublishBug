@@ -16,7 +16,7 @@ of the projects and general codebase structure is
 I first discovered the bug when I had to update a couple of things all at once
 with our app / pipeline:
 
-- macOS runner image: [ 20250331.1080](https://github.com/actions/runner-images/releases/tag/macos-15%2F20250331.1080) -> [20250408.1132](https://github.com/actions/runner-images/releases/tag/macos-15%2F20250408.1132).
+- macOS runner image: [20250331.1080](https://github.com/actions/runner-images/releases/tag/macos-15%2F20250331.1080) -> [20250408.1132](https://github.com/actions/runner-images/releases/tag/macos-15%2F20250408.1132).
   As we use Microsoft-Hosted agents, this is out of our control.
 - .NET MAUI version (`MauiVersion`): `9.0.50` -> `9.0.60`. We needed to do this
   to resolve some bugs in our app.
@@ -40,6 +40,12 @@ project, and help to pin down the issue.
 It may be worth noting that our app contains multiple projects to help
 [structure our codebase](#codebase-structure). I've replicated this here as I
 believe it is relevant.
+
+> [!IMPORTANT]
+> I don't seem to be able to reproduce the bug using GitHub workflows, at least
+> not with the `macos-15` runners anyway. We use `macos-15` runners in our Azure
+> Pipelines, but I believe that is equivalent to a `macos-15-large` runner in a
+> GitHub workflow.
 
 ## Workaround
 
@@ -185,6 +191,13 @@ variables:
   provisioningProfile: 'MyApp.mobileprovision' # Provisioning profile name in secure files.
   appleCertificate: 'MyApp.p12' # Apple signing certificate name in secure files.
 ```
+
+## Binlogs
+
+Both the [GitHub workflow](.github/workflows/ci-build.yml) and
+[azure pipeline](./azure-pipelines.yml) are configured to capture binlogs during
+the `dotnet publish` / `dotnet build` steps. These will then be uploaded with
+the rest of the artifacts.
 
 ## Licenses and Attributions
 
