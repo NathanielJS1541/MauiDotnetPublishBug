@@ -1,0 +1,84 @@
+name: CI Build
+
+# Configure the triggers for the workflow.
+on:
+  # Automatically run when code or workflow changes are pushed to main.
+  push:
+    branches: [ main ]
+    paths:
+      - "src/"               # Run the workflow if the src is updated.
+      - ".github/workflows/" # Run the workflow if it is updated.
+      - "!**/*.md"           # Do not run the workflow for updated docs.
+      - "!**/*.gitignore"    # Do not run the workflow for updated .gitignore.
+  # Automatically run the workflow when a PR is opened targeting main.
+  pull_request:
+    branches: [ main ]
+  # Allow the workflow to be run manually.
+  workflow_dispatch:
+
+# Set the level of access of the GitHub API token for this workflow.
+permissions:
+  contents: read # Allow the workflow to read the repo contents.
+
+# Define environmental variables.
+env:
+  DOTNET_NOLOGO: true     # Disable the .NET CLI banner to reduce output noise.
+  DOTNET_VERSION: "9.0.x" # Use the latest .NET Core 9 version.
+
+# Define jobs for the workflow.
+jobs:
+  build-android:
+    runs-on: windows-2022
+    name: Android Build
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install MAUI Workload
+        run: dotnet workload install maui --ignore-failed-sources
+
+      - name: Restore Dependencies
+        run: dotnet restore src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj
+
+      - name: Build MAUI Android
+        run: dotnet publish src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj -c Release -f net9.0-android --no-restore
+
+      - name: Upload Android Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mauidotnetpublishbug-android-ci-build
+          path: src/MauiDotnetPublishBug.App/bin/Release/net9.0-android/*Signed.a*
+
+  build-ios:
+    runs-on: macos-15-large # Same as MS-hosted macos-15 runner image on Azure Pipelines.
+    name: iOS Build
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install MAUI Workload
+        run: dotnet workload install maui --ignore-failed-sources
+
+      - name: Restore Dependencies
+        run: dotnet restore src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj
+
+      - name: Build MAUI iOS
+        run: dotnet build src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj -c Release -f net9.0-ios --no-restore /p:buildForSimulator=True /p:packageApp=True /p:ArchiveOnBuild=False
+
+      - name: Upload iOS Artifact
+        uses: actions/upload-artifact@4
+        with:
+          name: mauidotnetpublishbug-ios-ci-build
+          path: src/MauiDotnetPublishBug.App/bin/Release/net9.0-ios/iossimulator-x64/**/*.app
