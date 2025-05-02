@@ -48,13 +48,31 @@ jobs:
         run: dotnet restore src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj
 
       - name: Build MAUI Android
-        run: dotnet publish src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj -c Release -f net9.0-android --no-restore
+        continue-on-error: true # Continue job even if this step fails to capture binlogs.
+        id: build_android
+        run: dotnet publish src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj -c Release -f net9.0-android --no-restore -bl:android-log.binlog
 
+      # Only try and upload build artifacts if the build step succeeded.
       - name: Upload Android Artifact
+        if: steps.build_android.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: mauidotnetpublishbug-android-ci-build
-          path: src/MauiDotnetPublishBug.App/bin/Release/net9.0-android/*Signed.a*
+          name: android-build-artifacts
+          path: |
+            **/*.aab
+            **/*.apk
+
+      # Always upload binlogs if the build step ran.
+      #
+      # Check conclusion here as build_android.continue-on-error = true, so the
+      # conclusion will be 'success' even if the build failed.
+      - name: Upload Android Binlogs
+        if: steps.build_android.conclusion == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-binlogs
+          path: |
+            **/*.binlog
 
   build-ios:
     # macos-15-large would technically be the equivalent to a MS-hosted macos-15
@@ -89,10 +107,28 @@ jobs:
       # repo. Instead, I've tried to use dotnet build to see if it exhibits the
       # same behaviour.
       - name: Build MAUI iOS
-        run: dotnet build src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj -c Release -f net9.0-ios --no-restore /p:buildForSimulator=True /p:packageApp=True /p:ArchiveOnBuild=False
+        id: build_ios
+        continue-on-error: true # Continue job even if this step fails to capture binlogs.
+        run: dotnet build src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj -c Release -f net9.0-ios --no-restore /p:buildForSimulator=True /p:packageApp=True /p:ArchiveOnBuild=False -bl:ios-log.binlog
 
+      # Only try and upload build artifacts if the build step succeeded.
       - name: Upload iOS Artifact
+        if: steps.build_ios.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: mauidotnetpublishbug-ios-ci-build
-          path: src/MauiDotnetPublishBug.App/bin/Release/net9.0-ios/iossimulator-x64/**/*.ipa
+          name: ios-build-artifacts
+          path: |
+            **/*.app
+            **/*.ipa
+
+      # Always upload binlogs if the build step ran.
+      #
+      # Check conclusion here as build_ios.continue-on-error = true, so the
+      # conclusion will be 'success' even if the build failed.
+      - name: Upload iOS Binlogs
+        if: steps.build_ios.conclusion == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-binlogs
+          path: |
+            **/*.binlog
