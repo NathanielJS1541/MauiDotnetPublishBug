@@ -1,22 +1,41 @@
 # MauiDotnetPublishBug
 
-A simple app with a GitHub action to reproduce dotnet/maui#29004.
+A simple app with a GitHub action / Azure pipeline to reproduce
+dotnet/maui#29004.
 
-The Action doesn't deploy the build artifacts anywhere, or do anything fancy for
-that matter, since the bug being reproduced occurs during the `dotnet publish`
-step in the action. Any other contents in the action would just add noise.
+The Action and pipeline don't deploy the build artifacts anywhere, or do
+anything fancy for that matter, since the bug being reproduced occurs during the
+`dotnet publish` / `dotnet build` step in the action. Any other contents in the
+action would just add noise.
 
 Because I needed to add multiple projects to reproduce the bug, I've had to add
 some (slightly ridiculous) classes and usage examples to each project. The uses
 of the projects and general codebase structure is
 [explained in more detail below](#codebase-structure).
 
+<!-- omit from toc -->
+## Contents
+
+- [Bug Details](#bug-details)
+- [Workaround](#workaround)
+- [Codebase Structure](#codebase-structure)
+  - [MauiDotnetPublishBug.App](#mauidotnetpublishbugapp)
+  - [MauiDotnetPublishBug.Common](#mauidotnetpublishbugcommon)
+  - [MauiDotnetPublishBug.Controls](#mauidotnetpublishbugcontrols)
+  - [MauiDotnetPublishBug.Core](#mauidotnetpublishbugcore)
+  - [MauiDotnetPublishBug.Resources](#mauidotnetpublishbugresources)
+- [Azure Pipeline File](#azure-pipeline-file)
+  - [Pipeline Variables](#pipeline-variables)
+  - [Secure Files](#secure-files)
+- [Binlogs](#binlogs)
+- [Licenses and Attributions](#licenses-and-attributions)
+
 ## Bug Details
 
 I first discovered the bug when I had to update a couple of things all at once
 with our app / pipeline:
 
-- macOS runner image: [ 20250331.1080](https://github.com/actions/runner-images/releases/tag/macos-15%2F20250331.1080) -> [20250408.1132](https://github.com/actions/runner-images/releases/tag/macos-15%2F20250408.1132).
+- macOS runner image: [20250331.1080](https://github.com/actions/runner-images/releases/tag/macos-15%2F20250331.1080) -> [20250408.1132](https://github.com/actions/runner-images/releases/tag/macos-15%2F20250408.1132).
   As we use Microsoft-Hosted agents, this is out of our control.
 - .NET MAUI version (`MauiVersion`): `9.0.50` -> `9.0.60`. We needed to do this
   to resolve some bugs in our app.
@@ -41,6 +60,12 @@ It may be worth noting that our app contains multiple projects to help
 [structure our codebase](#codebase-structure). I've replicated this here as I
 believe it is relevant.
 
+> [!IMPORTANT]
+> I don't seem to be able to reproduce the bug using GitHub workflows, at least
+> not with the `macos-15` runners anyway. We use `macos-15` runners in our Azure
+> Pipelines, but I believe that is equivalent to a `macos-15-large` runner in a
+> GitHub workflow.
+
 ## Workaround
 
 I found that to work around the error, you can pass the `-m:1` flag as the
@@ -60,44 +85,44 @@ larger app, which I will try and describe below.
 Our app is split across multiple projects, in a similar structure to this:
 
 ```text
-  src
- ├─  MauiDotnetPublishBug.App
- │  ├─  Platforms
- │  │  ├─  Android
- │  │  └─  iOS
- │  ├─  Resources
- │  ├─  Views
- │  │  ├─  MainPage.xaml
- │  │  └─ 󰌛 MainPage.xaml.cs
- │  ├─  App.xaml
- │  ├─ 󰌛 App.xaml.cs
- │  ├─  AppShell.xaml
- │  ├─ 󰌛 AppShell.xaml.cs
- │  ├─  MauiDotnetPublishBug.App.csproj
- │  └─ 󰌛 MauiProgram.cs
- ├─  MauiDotnetPublishBug.Common
- │  ├─  Resources
- │  │  └─ 󰌛 IResourceManager.cs
- │  ├─  Settings
- │  │  └─ 󰌛 ISettingsManager.cs
- │  └─  MauiDotnetPublishBug.Common.csproj
- ├─  MauiDotnetPublishBug.Controls
- │  ├─  Converters
- │  │  ├─ 󰌛 ContrastingTextColourConverter.cs
- │  │  └─ 󰌛 InvertedColourConverter.cs
- │  ├─  ColourPreviewCard.xaml
- │  ├─ 󰌛 ColourPreviewCard.xaml.cs
- │  └─  MauiDotnetPublishBug.Controls.csproj
- ├─  MauiDotnetPublishBug.Core
- │  ├─  Settings
- │  │  └─ 󰌛 SettingsManager.cs
- │  └─  MauiDotnetPublishBug.Core.csproj
- ├─  MauiDotnetPublishBug.Resources
- │  ├─  Icons
- │  ├─  Strings
- │  ├─  MauiDotnetPublishBug.Resources.csproj
- │  └─ 󰌛 ResourceManager.cs
- └─  MauiDotnetPublishBug.sln
+ 📁 src
+ ├─ 📁 MauiDotnetPublishBug.App
+ │  ├─ 📁 Platforms
+ │  │  ├─ 📁 Android
+ │  │  └─ 📁 iOS
+ │  ├─ 📁 Resources
+ │  ├─ 📁 Views
+ │  │  ├─ 🗎 MainPage.xaml
+ │  │  └─ 🗎 MainPage.xaml.cs
+ │  ├─ 🗎 App.xaml
+ │  ├─ 🗎 App.xaml.cs
+ │  ├─ 🗎 AppShell.xaml
+ │  ├─ 🗎 AppShell.xaml.cs
+ │  ├─ 🗎 MauiDotnetPublishBug.App.csproj
+ │  └─ 🗎 MauiProgram.cs
+ ├─ 📁 MauiDotnetPublishBug.Common
+ │  ├─ 📁 Resources
+ │  │  └─ 🗎 IResourceManager.cs
+ │  ├─ 📁 Settings
+ │  │  └─ 🗎 ISettingsManager.cs
+ │  └─ 🗎 MauiDotnetPublishBug.Common.csproj
+ ├─ 📁 MauiDotnetPublishBug.Controls
+ │  ├─ 📁 Converters
+ │  │  ├─ 🗎 ContrastingTextColourConverter.cs
+ │  │  └─ 🗎 InvertedColourConverter.cs
+ │  ├─ 🗎 ColourPreviewCard.xaml
+ │  ├─ 🗎 ColourPreviewCard.xaml.cs
+ │  └─ 🗎 MauiDotnetPublishBug.Controls.csproj
+ ├─ 📁 MauiDotnetPublishBug.Core
+ │  ├─ 📁 Settings
+ │  │  └─ 🗎 SettingsManager.cs
+ │  └─ 🗎 MauiDotnetPublishBug.Core.csproj
+ ├─ 📁 MauiDotnetPublishBug.Resources
+ │  ├─ 📁 Icons
+ │  ├─ 📁 Strings
+ │  ├─ 🗎 MauiDotnetPublishBug.Resources.csproj
+ │  └─ 🗎 ResourceManager.cs
+ └─ 🗎 MauiDotnetPublishBug.sln
 ```
 
 **Note: Some items are omitted for brevity.**
@@ -185,6 +210,13 @@ variables:
   provisioningProfile: 'MyApp.mobileprovision' # Provisioning profile name in secure files.
   appleCertificate: 'MyApp.p12' # Apple signing certificate name in secure files.
 ```
+
+## Binlogs
+
+Both the [GitHub workflow](.github/workflows/ci-build.yml) and
+[azure pipeline](./azure-pipelines.yml) are configured to capture binlogs during
+the `dotnet publish` / `dotnet build` steps. These will then be uploaded with
+the rest of the artifacts.
 
 ## Licenses and Attributions
 
