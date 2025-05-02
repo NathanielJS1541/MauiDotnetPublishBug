@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:MauiDotnetPublishBug.Controls;assembly=MauiDotnetPublishBug.Controls"
+             xmlns:views="clr-namespace:MauiDotnetPublishBug.Views"
+             xmlns:converters="clr-namespace:MauiDotnetPublishBug.Controls.Converters;assembly=MauiDotnetPublishBug.Controls"
+             x:Class="MauiDotnetPublishBug.Views.MainPage"
+             x:DataType="views:MainPage">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:InvertedColourConverter x:Key="InvertedColourConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <!-- Grid to lay out the main page contents, with fixed title and button positions. -->
+    <Grid Margin="10"
+          RowDefinitions="Auto,*,Auto"
+          RowSpacing="10"
+          ColumnDefinitions="*,*"
+          ColumnSpacing="10">
+
+        <!-- Title fixed at the top of the screen. -->
+        <Label Grid.Row="0"
+               Grid.Column="0"
+               Grid.ColumnSpan="2"
+               Padding="0,0,0,0"
+               Text="{Binding TitleLabel}"
+               Style="{StaticResource Headline}" />
+
+        <!-- Main page contents in a ScrollView. -->
+        <ScrollView Grid.Row="1"
+                    Grid.Column="0"
+                    Grid.ColumnSpan="2">
+            <VerticalStackLayout>
+
+                <!-- Label for the colour preview. -->
+                <Label Text="{Binding RandomColourLabel}"
+                       FontSize="24" />
+
+                <!-- Card to display the generated colour. -->
+                <controls:ColourPreviewCard Colour="{Binding RandomColour}"
+                                            Margin="0,10"/>
+
+                <!-- Label for the colour generation time. -->
+                <Label Text="{Binding ColourGenerationTimeHeadingLabel}"
+                       FontSize="24" />
+
+                <!-- Label to display the time/data the colour was generated at. -->
+                <Label Text="{Binding ColourGenerationTimeLabel}"
+                       FontSize="18"/>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Side-by-side buttons fixed at the bottom of the screen. -->
+        <ImageButton Grid.Row="2"
+                     Grid.Column="0"
+                     Source="{Binding DiceIcon}"
+                     Clicked="OnGenerateColour"
+                     BackgroundColor="{Binding RandomColour}"
+                     BorderColor="{Binding RandomColour, Converter={StaticResource InvertedColourConverter}}"
+                     BorderWidth="1"
+                     HeightRequest="64" />
+        <ImageButton Grid.Row="2"
+                     Grid.Column="1"
+                     Source="{Binding DeleteIcon}"
+                     Clicked="OnDeleteSettings"
+                     BackgroundColor="Red"
+                     BorderColor="White"
+                     BorderWidth="1"
+                     HeightRequest="64" />
+    </Grid>
+
+</ContentPage>
