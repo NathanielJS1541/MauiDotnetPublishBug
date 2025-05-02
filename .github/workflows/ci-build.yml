@@ -191,15 +191,17 @@ jobs:
           $writer.Close()
 
       - name: Install MAUI Workload
-        run: dotnet workload install maui --ignore-failed-sources
+        run: |
+          dotnet nuget locals all --clear
+          dotnet workload install maui android --source https://api.nuget.org/v3/index.json
 
       - name: Restore Dependencies
-        run: dotnet restore src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj
+        run: dotnet restore src/MauiDotnetPublishBug.sln
 
       - name: Build MAUI Android
         continue-on-error: true # Continue job even if this step fails to capture binlogs.
         id: build_android
-        run: dotnet publish src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj -c Release -f ${{ env.androidFramework }} --no-restore -bl:android-log.binlog
+        run: dotnet publish src/MauiDotnetPublishBug.sln -c Release -f ${{ env.androidFramework }} -p:AndroidPackageFormat=aab --no-restore -bl:android-log.binlog
 
       # Only try and upload build artifacts if the build step succeeded.
       - name: Upload Android Artifact
@@ -278,10 +280,12 @@ jobs:
           $writer.Close()
 
       - name: Install MAUI Workload
-        run: dotnet workload install maui --ignore-failed-sources
+        run: |
+          dotnet nuget locals all --clear
+          dotnet workload install maui android --source https://api.nuget.org/v3/index.json
 
       - name: Restore Dependencies
-        run: dotnet restore src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj
+        run: dotnet restore src/MauiDotnetPublishBug.sln
 
       # In our actual pipeline, we use dotnet publish. However, that requires a
       # provisioning profile and signing certificate which I don't have for this
@@ -290,7 +294,7 @@ jobs:
       - name: Build MAUI iOS
         id: build_ios
         continue-on-error: true # Continue job even if this step fails to capture binlogs.
-        run: dotnet build src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj -c Release -f ${{ env.iosFramework }} --no-restore /p:buildForSimulator=True /p:packageApp=True /p:ArchiveOnBuild=False -bl:ios-log.binlog
+        run: dotnet build src/MauiDotnetPublishBug.sln -c Release -f ${{ env.iosFramework }} -p:buildForSimulator=true -p:packageApp=true -p:ArchiveOnBuild=false -bl:ios-log.binlog
 
       # Only try and upload build artifacts if the build step succeeded.
       - name: Upload iOS Artifact
