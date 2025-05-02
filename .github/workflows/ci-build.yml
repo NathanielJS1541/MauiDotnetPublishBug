@@ -29,7 +29,7 @@ env:
 # Define jobs for the workflow.
 jobs:
   config:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     name: Workflow Configuration
 
     outputs:
@@ -146,7 +146,7 @@ jobs:
           Write-Host "Build Number: ${{ github.run_attempt }}"
 
   build-android:
-    runs-on: macos-15
+    runs-on: self-hosted
     name: Android Build
     needs: config # Wait for the workflow configuration to finish.
     env:
@@ -226,11 +226,7 @@ jobs:
             **/*.binlog
 
   build-ios:
-    # macos-15-large would technically be the equivalent to a MS-hosted macos-15
-    # runner image on Azure Pipelines, but that isn't available as standard for
-    # non-enterprise plans. I'll see what I can do with the arm64 macOS images
-    # instead...
-    runs-on: macos-15
+    runs-on: self-hosted
     name: iOS Build
     needs: config # Wait for the workflow configuration to finish.
     env:
