@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:MauiDotnetPublishBug.Controls"
+             xmlns:converters="clr-namespace:MauiDotnetPublishBug.Controls.Converters"
+             x:Class="MauiDotnetPublishBug.Controls.ColourPreviewCard">
+
+    <ContentView.Resources>
+        <ResourceDictionary>
+            <converters:InvertedColourConverter x:Key="InvertedColourConverter" />
+            <converters:ContrastingTextColourConverter x:Key="ContrastingTextColourConverter" />
+        </ResourceDictionary>
+    </ContentView.Resources>
+
+    <!--
+    Use a ControlTemplate to set the appearance of the card, while still allowing it to accept
+    content from other XAML files, and not interfere with the bindings of the consumer.
+    -->
+    <ContentView.ControlTemplate>
+        <ControlTemplate x:DataType="controls:ColourPreviewCard">
+
+            <!-- Use a border to set the card stroke and background colour. -->
+            <Border HeightRequest="200"
+                    BackgroundColor="{TemplateBinding Colour}"
+                    Stroke="{TemplateBinding Colour, Converter={StaticResource InvertedColourConverter}}"
+                    StrokeThickness="1">
+
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="10" />
+                </Border.StrokeShape>
+
+                <!-- Display text over the colour preview displaying the hex code. -->
+                <Label Text="{TemplateBinding ColourHex}"
+                       TextColor="{TemplateBinding Colour, Converter={StaticResource ContrastingTextColourConverter}}"
+                       Style="{StaticResource Headline}"
+                       VerticalOptions="Center" />
+            </Border>
+
+        </ControlTemplate>
+    </ContentView.ControlTemplate>
+
+</ContentView>

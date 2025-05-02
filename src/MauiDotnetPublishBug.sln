@@ -1,9 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35931.197 d17.13
+VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MauiDotnetPublishBug.App", "MauiDotnetPublishBug.App\MauiDotnetPublishBug.App.csproj", "{08A1EC2A-FB7B-4E06-851E-7C9F5EAD4880}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MauiDotnetPublishBug.Common", "MauiDotnetPublishBug.Common\MauiDotnetPublishBug.Common.csproj", "{A2A6FEE2-A8F4-480B-8C7C-3CCF6B7FE9C8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MauiDotnetPublishBug.Controls", "MauiDotnetPublishBug.Controls\MauiDotnetPublishBug.Controls.csproj", "{6FD76BF5-E413-4375-8E17-F2EBD2849E5A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MauiDotnetPublishBug.Core", "MauiDotnetPublishBug.Core\MauiDotnetPublishBug.Core.csproj", "{57DA6B58-C8DE-424B-BB6C-2C253EE10EA6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MauiDotnetPublishBug.Resources", "MauiDotnetPublishBug.Resources\MauiDotnetPublishBug.Resources.csproj", "{EBD2AF49-919B-4BF1-B65B-C812F1841D90}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,13 +21,31 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{08A1EC2A-FB7B-4E06-851E-7C9F5EAD4880}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{08A1EC2A-FB7B-4E06-851E-7C9F5EAD4880}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08A1EC2A-FB7B-4E06-851E-7C9F5EAD4880}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
 		{08A1EC2A-FB7B-4E06-851E-7C9F5EAD4880}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{08A1EC2A-FB7B-4E06-851E-7C9F5EAD4880}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2A6FEE2-A8F4-480B-8C7C-3CCF6B7FE9C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2A6FEE2-A8F4-480B-8C7C-3CCF6B7FE9C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2A6FEE2-A8F4-480B-8C7C-3CCF6B7FE9C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2A6FEE2-A8F4-480B-8C7C-3CCF6B7FE9C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6FD76BF5-E413-4375-8E17-F2EBD2849E5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6FD76BF5-E413-4375-8E17-F2EBD2849E5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6FD76BF5-E413-4375-8E17-F2EBD2849E5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6FD76BF5-E413-4375-8E17-F2EBD2849E5A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57DA6B58-C8DE-424B-BB6C-2C253EE10EA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57DA6B58-C8DE-424B-BB6C-2C253EE10EA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57DA6B58-C8DE-424B-BB6C-2C253EE10EA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57DA6B58-C8DE-424B-BB6C-2C253EE10EA6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EBD2AF49-919B-4BF1-B65B-C812F1841D90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EBD2AF49-919B-4BF1-B65B-C812F1841D90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EBD2AF49-919B-4BF1-B65B-C812F1841D90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EBD2AF49-919B-4BF1-B65B-C812F1841D90}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
+		RESX_NeutralResourcesLanguage = en-GB
 		SolutionGuid = {0674C5D1-25FC-4F8D-BA9C-0500D549D7F3}
 	EndGlobalSection
 EndGlobal
