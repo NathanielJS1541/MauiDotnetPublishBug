@@ -60,44 +60,44 @@ larger app, which I will try and describe below.
 Our app is split across multiple projects, in a similar structure to this:
 
 ```text
-  src
- ├─  MauiDotnetPublishBug.App
- │  ├─  Platforms
- │  │  ├─  Android
- │  │  └─  iOS
- │  ├─  Resources
- │  ├─  Views
- │  │  ├─  MainPage.xaml
- │  │  └─ 󰌛 MainPage.xaml.cs
- │  ├─  App.xaml
- │  ├─ 󰌛 App.xaml.cs
- │  ├─  AppShell.xaml
- │  ├─ 󰌛 AppShell.xaml.cs
- │  ├─  MauiDotnetPublishBug.App.csproj
- │  └─ 󰌛 MauiProgram.cs
- ├─  MauiDotnetPublishBug.Common
- │  ├─  Resources
- │  │  └─ 󰌛 IResourceManager.cs
- │  ├─  Settings
- │  │  └─ 󰌛 ISettingsManager.cs
- │  └─  MauiDotnetPublishBug.Common.csproj
- ├─  MauiDotnetPublishBug.Controls
- │  ├─  Converters
- │  │  ├─ 󰌛 ContrastingTextColourConverter.cs
- │  │  └─ 󰌛 InvertedColourConverter.cs
- │  ├─  ColourPreviewCard.xaml
- │  ├─ 󰌛 ColourPreviewCard.xaml.cs
- │  └─  MauiDotnetPublishBug.Controls.csproj
- ├─  MauiDotnetPublishBug.Core
- │  ├─  Settings
- │  │  └─ 󰌛 SettingsManager.cs
- │  └─  MauiDotnetPublishBug.Core.csproj
- ├─  MauiDotnetPublishBug.Resources
- │  ├─  Icons
- │  ├─  Strings
- │  ├─  MauiDotnetPublishBug.Resources.csproj
- │  └─ 󰌛 ResourceManager.cs
- └─  MauiDotnetPublishBug.sln
+ 📁 src
+ ├─ 📁 MauiDotnetPublishBug.App
+ │  ├─ 📁 Platforms
+ │  │  ├─ 📁 Android
+ │  │  └─ 📁 iOS
+ │  ├─ 📁 Resources
+ │  ├─ 📁 Views
+ │  │  ├─ 🗎 MainPage.xaml
+ │  │  └─ 🗎 MainPage.xaml.cs
+ │  ├─ 🗎 App.xaml
+ │  ├─ 🗎 App.xaml.cs
+ │  ├─ 🗎 AppShell.xaml
+ │  ├─ 🗎 AppShell.xaml.cs
+ │  ├─ 🗎 MauiDotnetPublishBug.App.csproj
+ │  └─ 🗎 MauiProgram.cs
+ ├─ 📁 MauiDotnetPublishBug.Common
+ │  ├─ 📁 Resources
+ │  │  └─ 🗎 IResourceManager.cs
+ │  ├─ 📁 Settings
+ │  │  └─ 🗎 ISettingsManager.cs
+ │  └─ 🗎 MauiDotnetPublishBug.Common.csproj
+ ├─ 📁 MauiDotnetPublishBug.Controls
+ │  ├─ 📁 Converters
+ │  │  ├─ 🗎 ContrastingTextColourConverter.cs
+ │  │  └─ 🗎 InvertedColourConverter.cs
+ │  ├─ 🗎 ColourPreviewCard.xaml
+ │  ├─ 🗎 ColourPreviewCard.xaml.cs
+ │  └─ 🗎 MauiDotnetPublishBug.Controls.csproj
+ ├─ 📁 MauiDotnetPublishBug.Core
+ │  ├─ 📁 Settings
+ │  │  └─ 🗎 SettingsManager.cs
+ │  └─ 🗎 MauiDotnetPublishBug.Core.csproj
+ ├─ 📁 MauiDotnetPublishBug.Resources
+ │  ├─ 📁 Icons
+ │  ├─ 📁 Strings
+ │  ├─ 🗎 MauiDotnetPublishBug.Resources.csproj
+ │  └─ 🗎 ResourceManager.cs
+ └─ 🗎 MauiDotnetPublishBug.sln
 ```
 
 **Note: Some items are omitted for brevity.**
