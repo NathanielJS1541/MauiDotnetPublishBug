@@ -28,9 +28,129 @@ env:
 
 # Define jobs for the workflow.
 jobs:
+  config:
+    runs-on: ubuntu-latest
+    name: Workflow Configuration
+
+    outputs:
+      versionNumber: ${{ steps.get_version.outputs.versionNumber }}
+      androidFramework: ${{ steps.get_target_frameworks.outputs.androidFramework }}
+      iosFramework: ${{ steps.get_target_frameworks.outputs.iosFramework }}
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get App Version
+        id: get_version
+        shell: pwsh
+        run: |
+          Write-Host ""
+          Write-Host "Opening MauiDotnetPublishBug.App.csproj..."
+          $string = Get-Content -Path .\src\MauiDotnetPublishBug.App\MauiDotnetPublishBug.App.csproj
+          Write-Host "Querying MauiDotnetPublishBug.App.csproj for version..."
+          $match = Select-String "<ApplicationDisplayVersion>(\d+)\.(\d+)\.(\d+)" -inputobject $string
+
+          Write-Host "Found the following version:"
+          $projectVersionMajor = $match.Matches.groups[1].value
+          $projectVersionMinor = $match.Matches.groups[2].value
+          $projectVersionBuild = $match.Matches.groups[3].value
+          Write-Host "- Major Version:    $projectVersionMajor"
+          Write-Host "- Minor Version:    $projectVersionMinor"
+          Write-Host "- Build Version:    $projectVersionBuild"
+
+          Write-Host ""
+          Write-Host "Finalising version..."
+          $version = $projectVersionMajor + "." + $projectVersionMinor + "." + $projectVersionBuild
+          Write-Host "- Version is: $version"
+          Write-Host ""
+          Write-Host "Saving to output..."
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "versionNumber=$version"
+
+      - name: Get Target Frameworks
+        id: get_target_frameworks
+        shell: pwsh
+        run: |
+          # Load the System.Xml.Linq assembly to parse the .csproj file.
+          Add-Type -AssemblyName "System.Xml.Linq"
+
+          # Resolve the absolute path to the app .csproj file.
+          $path = (Resolve-Path ".\src\MauiDotnetPublishBug.App\MauiDotnetPublishBug.App.csproj").Path
+
+          # Load the .csproj file as an XDocument.
+          $doc = [System.Xml.Linq.XDocument]::Load($path)
+
+          # Get the target frameworks from the .csproj file.
+          $targetFrameworks = $doc.
+              Element("Project").
+              Element("PropertyGroup").
+              Element("TargetFrameworks").
+              Value
+
+          # Try and get the Android and iOS frameworks from the target
+          # frameworks in the .csproj file.
+          if ($targetFrameworks -match "(?<framework>net\d\.\d-android)") {
+              $androidFramework = $Matches["framework"]
+          }
+          else {
+              # Output an error message displaying the available target
+              # frameworks if a matching framework was not found.
+
+              # Convert the list of target frameworks to a bullet point list.
+              $frameworksList = ($targetFrameworks -split ";" | ForEach-Object { "• $_" }) -join "`n"
+
+              # Output an error and display all target frameworks.
+              Write-Error -Message "Unable to identify Android target framework:`n$frameworksList"
+          }
+          if ($targetFrameworks -match "(?<framework>net\d\.\d-ios)") {
+              $iosFramework = $Matches["framework"]
+          }
+          else {
+              # Output an error message displaying the available target
+              # frameworks if a matching framework was not found.
+
+              # Convert the list of target frameworks to a bullet point list.
+              $frameworksList = ($targetFrameworks -split ";" | ForEach-Object { "• $_" }) -join "`n"
+
+              # Output an error and display all target frameworks.
+              Write-Error -Message "Unable to identify iOS target framework:`n$frameworksList"
+          }
+
+          # If the target frameworks were successfully identified, write them
+          # to variables to be used in the build step.
+          if (-not [string]::IsNullOrEmpty($androidFramework) -and -not [string]::IsNullOrEmpty($androidFramework)) {
+            Write-Host ""
+            Write-Host "Saving target frameworks to output..."
+            Add-Content -Path $env:GITHUB_OUTPUT -Value "androidFramework=$androidFramework"
+            Add-Content -Path $env:GITHUB_OUTPUT -Value "iosFramework=$iosFramework"
+          }
+
+      - name: Display Workflow Configuration
+        id: output_config
+        shell: pwsh
+        run: |
+          Write-Host ""
+          Write-Host "Current Workflow Configuration:"
+          Write-Host ""
+          Write-Host "Runner Configuration:"
+          Write-Host "Xcode Version: ${{ env.XCODE_VERSION }}"
+          Write-Host ""
+          Write-Host "Build Configuration:"
+          Write-Host "Selected .NET Version: ${{ env.DOTNET_VERSION }}"
+          Write-Host "Android TargetFramework: ${{ steps.get_target_frameworks.outputs.androidFramework }}"
+          Write-Host "iOS TargetFramework: ${{ steps.get_target_frameworks.outputs.iosFramework }}"
+          Write-Host ""
+          Write-Host "App Configuration:"
+          Write-Host "App Version: ${{ steps.get_version.outputs.versionNumber }}"
+          Write-Host "Build Number: ${{ github.run_attempt }}"
+
   build-android:
-    runs-on: windows-2022
+    runs-on: macos-15
     name: Android Build
+    needs: config # Wait for the workflow configuration to finish.
+    env:
+      androidFramework: ${{needs.config.outputs.androidFramework}}
     steps:
 
       - name: Checkout
@@ -79,7 +199,7 @@ jobs:
       - name: Build MAUI Android
         continue-on-error: true # Continue job even if this step fails to capture binlogs.
         id: build_android
-        run: dotnet publish src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj -c Release -f net9.0-android --no-restore -bl:android-log.binlog
+        run: dotnet publish src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj -c Release -f ${{ env.androidFramework }} --no-restore -bl:android-log.binlog
 
       # Only try and upload build artifacts if the build step succeeded.
       - name: Upload Android Artifact
@@ -110,6 +230,9 @@ jobs:
     # instead...
     runs-on: macos-15
     name: iOS Build
+    needs: config # Wait for the workflow configuration to finish.
+    env:
+      iosFramework: ${{needs.config.outputs.iosFramework}}
     steps:
 
       - name: Checkout
@@ -167,7 +290,7 @@ jobs:
       - name: Build MAUI iOS
         id: build_ios
         continue-on-error: true # Continue job even if this step fails to capture binlogs.
-        run: dotnet build src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj -c Release -f net9.0-ios --no-restore /p:buildForSimulator=True /p:packageApp=True /p:ArchiveOnBuild=False -bl:ios-log.binlog
+        run: dotnet build src/MauiDotnetPublishBug.App/MauiDotnetPublishBug.App.csproj -c Release -f ${{ env.iosFramework }} --no-restore /p:buildForSimulator=True /p:packageApp=True /p:ArchiveOnBuild=False -bl:ios-log.binlog
 
       # Only try and upload build artifacts if the build step succeeded.
       - name: Upload iOS Artifact
