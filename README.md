@@ -13,6 +13,12 @@ some (slightly ridiculous) classes and usage examples to each project. The uses
 of the projects and general codebase structure is
 [explained in more detail below](#codebase-structure).
 
+> [!IMPORTANT]
+> I don't seem to be able to reproduce the bug using GitHub workflows, at least
+> not with the `macos-15` runners. We use `macos-15` runners in our Azure
+> Pipelines (where I am able to reliably reproduce the issue), but I believe
+> that is equivalent to a `macos-15-large` runner in a GitHub workflow.
+
 <!-- omit from toc -->
 ## Contents
 
@@ -59,12 +65,6 @@ project, and help to pin down the issue.
 It may be worth noting that our app contains multiple projects to help
 [structure our codebase](#codebase-structure). I've replicated this here as I
 believe it is relevant.
-
-> [!IMPORTANT]
-> I don't seem to be able to reproduce the bug using GitHub workflows, at least
-> not with the `macos-15` runners anyway. We use `macos-15` runners in our Azure
-> Pipelines, but I believe that is equivalent to a `macos-15-large` runner in a
-> GitHub workflow.
 
 ## Workaround
 
