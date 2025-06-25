@@ -2,9 +2,10 @@ name: CI Build
 
 # Configure the triggers for the workflow.
 on:
-  # Automatically run when code or workflow changes are pushed to main.
+  # Automatically run when code or workflow changes are pushed to main, or temporarily the
+  # troubleshooting branch.
   push:
-    branches: [ main ]
+    branches: [ main, troubleshooting ]
     paths:
       - "src/"               # Run the workflow if the src is updated.
       - ".github/workflows/" # Run the workflow if it is updated.
